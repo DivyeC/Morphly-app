@@ -3,17 +3,17 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const { HfInference } = require("@huggingface/inference");
-const { Octokit } = require("@octokit/rest");const OpenAI = require("openai");
+const { Octokit } = require("@octokit/rest");
+const OpenAI = require("openai");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// allow your React dev origin
 app.use(cors({ origin: ["http://localhost:3000", "http://localhost:3001", "https://morphly-app-production-front.up.railway.app"] }));
 app.use(express.json());
 
-// in-memory job store for demo
-const jobs = {}; // { [jobId]: { status, videoUrl, error, ghRunId } }
+// in-memory job store
+const jobs = {};
 
 // health check
 app.get("/", (req, res) => {
@@ -28,41 +28,38 @@ app.post("/api/generate", async (req, res) => {
 
     const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+    // STEP 1: OpenRouter → generate Manim code
+    const openai = new OpenAI({
+      apiKey: process.env.OPENROUTER_API_KEY,
+      baseURL: 'https://openrouter.ai/api/v1',
+    });
 
-// STEP 1: OpenRouter → generate Manim code
-// STEP 1: OpenRouter
-const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: 'https://openrouter.ai/api/v1',
-});
-
-const completion = await openai.chat.completions.create({
-  model: "openrouter/auto",  // ✅ Always picks available free model
-  messages: [
-    { role: "system", content: `Write COMPLETE valid Manim Python code. 
+    const completion = await openai.chat.completions.create({
+      model: "openrouter/auto",
+      messages: [
+        { role: "system", content: `Write COMPLETE valid Manim Python code. 
 MUST start with: from manim import *
 Then: class Main(Scene):
     def construct(self):
         # your animation for: "${prompt}"
 
 NO markdown. NO explanations. ONLY pure executable Python code. Make sure to close any open brackets , no syntax errors` },
-    { role: "user", content: prompt }
-  ],
-  max_tokens: 600,
-});
+        { role: "user", content: prompt }
+      ],
+      max_tokens: 600,
+    });
 
-//const manimCode = completion.choices[0].message.content.trim();  // ✅ OpenAI format
-let manimCode = completion.choices[0].message.content.trim();
+    let manimCode = completion.choices[0].message.content.trim();
 
-// ❌ STRIP markdown codeblocks
-manimCode = manimCode
-  .replace(/^```(?:python|py|)?\s*\n?/, '')  // Remove opening ```
-  .replace(/\n?```$/, '')                    // Remove closing ```
-  .trim();
+    // Strip markdown codeblocks
+    manimCode = manimCode
+      .replace(/^```(?:python|py|)?\s*\n?/, '')
+      .replace(/\n?```$/, '')
+      .trim();
 
-console.log("Clean code:", manimCode);  // Verify pure Python
+    console.log("Clean code:", manimCode);
 
-const scriptPath = `generated/${jobId}.py`;
+    const scriptPath = `generated/${jobId}.py`;
 
     // STEP 2: Write code to GitHub repo
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
@@ -75,29 +72,42 @@ const scriptPath = `generated/${jobId}.py`;
     });
 
     // STEP 3: Trigger GitHub Actions workflow
-    const workflowResponse = await octokit.rest.actions.createWorkflowDispatch({
+    await octokit.rest.actions.createWorkflowDispatch({
       owner: process.env.GITHUB_OWNER,
       repo: process.env.GITHUB_REPO,
       workflow_id: 220414432,
-      ref: "main", // your branch
+      ref: "main",
       inputs: {
         source_file: scriptPath,
-        scene_names: "Main", // assume scene class is "Main"
+        scene_names: "Main",
       },
     });
-    const runId = workflowResponse.data.id;
 
-    // STEP 4: Store job data
+    // STEP 4: Store job data (no runId yet — createWorkflowDispatch returns 204 No Content)
     jobs[jobId] = {
       status: "running",
       videoUrl: null,
       error: null,
-      ghRunId: runId,
+      ghRunId: null,
       ghRepo: `${process.env.GITHUB_OWNER}/${process.env.GITHUB_REPO}`,
     };
 
-    // Poll for completion (runs every status check)
-    pollWorkflowStatus(jobId);
+    // Wait 5 seconds then fetch the latest run ID
+    setTimeout(async () => {
+      try {
+        const runs = await octokit.rest.actions.listWorkflowRuns({
+          owner: process.env.GITHUB_OWNER,
+          repo: process.env.GITHUB_REPO,
+          workflow_id: 220414432,
+          per_page: 1,
+        });
+        jobs[jobId].ghRunId = runs.data.workflow_runs[0].id;
+        pollWorkflowStatus(jobId);
+      } catch (e) {
+        jobs[jobId].status = "error";
+        jobs[jobId].error = e.message;
+      }
+    }, 5000);
 
     res.json({ jobId });
   } catch (err) {
@@ -114,12 +124,11 @@ app.get("/api/status/:jobId", async (req, res) => {
     return res.status(404).json({ status: "error", message: "Job not found" });
   }
 
-  // optional: if you want to re‑poll GitHub while running
   if (job.status === "running") {
     try {
       await pollWorkflowStatus(jobId);
     } catch (e) {
-      // ignore errors here, job object already has last known status
+      // ignore errors, job object already has last known status
     }
   }
 
@@ -136,10 +145,9 @@ async function pollWorkflowStatus(jobId) {
   if (!job || !job.ghRunId) return;
 
   const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-  
+
   const poll = async () => {
     try {
-      // Get run status
       const run = await octokit.rest.actions.getWorkflowRun({
         owner: job.ghRepo.split("/")[0],
         repo: job.ghRepo.split("/")[1],
@@ -148,7 +156,6 @@ async function pollWorkflowStatus(jobId) {
 
       if (run.data.status === "completed") {
         if (run.data.conclusion === "success") {
-          // Get artifacts
           const artifacts = await octokit.rest.actions.listWorkflowRunArtifacts({
             owner: job.ghRepo.split("/")[0],
             repo: job.ghRepo.split("/")[1],
@@ -157,13 +164,12 @@ async function pollWorkflowStatus(jobId) {
 
           console.log("ALL ARTIFACTS:", artifacts.data.artifacts.map(a => a.name));
 
-        const videoArtifact = artifacts.data.artifacts.find(a => a.name.includes("manim"));  // Matches ANY manim-*
-        if (videoArtifact) {
-          job.status = "done";
-          // Direct MP4 (no .zip)
-          job.videoUrl = `https://${process.env.GITHUB_OWNER}.github.io/${process.env.GITHUB_REPO}/videos/latest.mp4`;
-          console.log("VIDEO URL:", job.videoUrl);
-        } else {
+          const videoArtifact = artifacts.data.artifacts.find(a => a.name.includes("manim"));
+          if (videoArtifact) {
+            job.status = "done";
+            job.videoUrl = `https://${process.env.GITHUB_OWNER}.github.io/${process.env.GITHUB_REPO}/videos/latest.mp4`;
+            console.log("VIDEO URL:", job.videoUrl);
+          } else {
             job.status = "error";
             job.error = "No video artifact found";
           }
@@ -182,7 +188,6 @@ async function pollWorkflowStatus(jobId) {
   const interval = setInterval(poll, 10000);
   poll(); // immediate check
 
-  // Clear when done
   const checkDone = () => {
     if (job.status !== "running") {
       clearInterval(interval);
@@ -192,7 +197,6 @@ async function pollWorkflowStatus(jobId) {
   };
   checkDone();
 }
-// ... your pollWorkflowStatus function ends ...
 
 app.listen(PORT, () => {
   console.log(`Backend listening on http://localhost:${PORT}`);
