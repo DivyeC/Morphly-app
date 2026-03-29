@@ -3,8 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const { HfInference } = require("@huggingface/inference");
-const { Octokit } = require("octokit");
-const OpenAI = require("openai");
+const { Octokit } = require("@octokit/rest");const OpenAI = require("openai");
 
 const app = express();
 const PORT = process.env.PORT || 8000;
