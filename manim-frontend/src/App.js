@@ -291,7 +291,7 @@ useEffect(() => {
 
           <div className="flow-diagram">
             <div className="flow-step">
-              <div className="step-icon">📝</div>
+              <img src="/images/1.png" alt="Enter Prompt" className="step-icon-img" />
               <div className="step-label">Enter Prompt</div>
               <p className="step-description">
                 Describe your animation idea in natural language
@@ -299,7 +299,7 @@ useEffect(() => {
             </div>
             <div className="flow-arrow">→</div>
             <div className="flow-step">
-              <div className="step-icon">🤖</div>
+              <img src="/images/2.png" alt="LLM Refines" className="step-icon-img" />
               <div className="step-label">LLM Refines</div>
               <p className="step-description">
                 AI converts your prompt into Manim code
@@ -307,7 +307,7 @@ useEffect(() => {
             </div>
             <div className="flow-arrow">→</div>
             <div className="flow-step">
-              <div className="step-icon">⚙️</div>
+              <img src="/images/3.png" alt="Execute Code" className="step-icon-img" />
               <div className="step-label">Execute Code</div>
               <p className="step-description">
                 Python renders the animation frames
@@ -315,7 +315,7 @@ useEffect(() => {
             </div>
             <div className="flow-arrow">→</div>
             <div className="flow-step">
-              <div className="step-icon">🎬</div>
+              <img src="/images/4.png" alt="Get Video" className="step-icon-img" />
               <div className="step-label">Get Video</div>
               <p className="step-description">
                 Video extracted and hosted online
@@ -372,7 +372,7 @@ useEffect(() => {
             <div className="feature-card" style={{ "--delay": "1s" }}>
               <div className="feature-icon">👥</div>
               <div className="feature-label">Community</div>
-              <p className="feature-text">View and share content, right here.</p>
+              <p className="feature-text">View and share content with an established community.</p>
             </div>
           </div>
         </div>
@@ -380,7 +380,7 @@ useEffect(() => {
 
       <footer className="app-footer">
         <p>
-          Built with <span>React</span> • <span>Manim</span> • <span>AI</span>
+          Built with <span>React</span> • <span>Manim</span> • <span> GitHub </span> • <span> Python </span> • <span> Railway </span>
         </p>
       </footer>
     </div>
