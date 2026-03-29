@@ -3,7 +3,7 @@ import "./App.css";
 import { ScrambleText } from "./ScrambleText";
 import { useMouseGlow } from "./useMouseGlow";
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 const EXAMPLE_PROMPT = "Show a sine wave morphing into a cosine wave";
 
