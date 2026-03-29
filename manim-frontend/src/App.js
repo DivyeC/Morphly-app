@@ -23,7 +23,6 @@ function App() {
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
-  const [pollIntervalId, setPollIntervalId] = useState(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [progress, setProgress] = useState(0);
 
@@ -38,11 +37,11 @@ function App() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  useEffect(() => {
-    if (glowRef.current) {
-      glowRef.current.style.opacity = "1";
-    }
-  }, []);
+useEffect(() => {
+  if (glowRef.current) {
+    glowRef.current.style.opacity = "1";
+  }
+}, [glowRef]);
 
   useEffect(() => {
     if (status !== "running") return;
@@ -72,14 +71,12 @@ function App() {
       console.log("Polling attempt:", attempts);
       if (attempts > 20) {
         clearInterval(id);
-        setPollIntervalId(null);
         setStatus("done");
         setProgress(100);
         const url = `https://divyec.github.io/Morphly/videos/latest.mp4?ts=${Date.now()}`;
         setVideoUrl(url);
       }
     }, 4000);
-    setPollIntervalId(id);
   };
 
   const handleSubmit = async (e) => {
