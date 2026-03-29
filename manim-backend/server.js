@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 // allow your React dev origin
-app.use(cors({ origin: ["http://localhost:3000", "http://localhost:3001", ""] }));
+app.use(cors({ origin: ["http://localhost:3000", "http://localhost:3001", "https://morphly-app-production-b3f8.up.railway.app/"] }));
 app.use(express.json());
 
 // in-memory job store for demo
