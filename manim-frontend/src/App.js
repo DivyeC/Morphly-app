@@ -69,7 +69,7 @@ useEffect(() => {
     const id = setInterval(() => {
       attempts++;
       console.log("Polling attempt:", attempts);
-      if (attempts > 20) {
+      if (attempts > 18) {
         clearInterval(id);
         setStatus("done");
         setProgress(100);
@@ -166,10 +166,10 @@ useEffect(() => {
       <section className="hero-section">
         <h1 className="hero-title">
           <span>
-            <span style={{ color: "var(--accent)" }}>Morph</span> ideas into animation
+            <span style={{ color: "var(--accent)" }}>Morph</span> mathematical ideas into
           </span>
           <br />
-          <ScrambleText isSequential={true}>effortlessly</ScrambleText>
+          <ScrambleText isSequential={true}>animations effortlessly</ScrambleText>
         </h1>
         <p className="hero-subtitle">
           Visualizing ideas is hard, so we made it effortless.
