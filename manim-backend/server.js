@@ -43,7 +43,8 @@ Then: class Main(Scene):
     def construct(self):
         # your animation for: "${prompt}"
 
-NO markdown. NO explanations. ONLY pure executable Python code. Make sure to close any open brackets , no syntax errors` },
+NO markdown. NO explanations. ONLY pure executable Python code. Make sure to close any open brackets , no syntax errors. Always write code for Manim Community Edition (ManimCE).
+Do not use TextMobject or TexMobject (these are deprecated). Use Text() for plain text and Tex() for LaTeX math.` },
         { role: "user", content: prompt }
       ],
       max_tokens: 600,
