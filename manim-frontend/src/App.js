@@ -166,10 +166,10 @@ useEffect(() => {
       <section className="hero-section">
         <h1 className="hero-title">
           <span>
-            <span style={{ color: "var(--accent)" }}>Morph</span> mathematical ideas into
+            <span style={{ color: "var(--accent)" }}>Morph</span> mathematical ideas
           </span>
           <br />
-          <ScrambleText isSequential={true}>animations effortlessly</ScrambleText>
+          <ScrambleText isSequential={true}>into animations effortlessly</ScrambleText>
         </h1>
         <p className="hero-subtitle">
           Visualizing ideas is hard, so we made it effortless.
