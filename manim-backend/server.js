@@ -9,7 +9,7 @@ const OpenAI = require("openai");
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-app.use(cors({ origin: ["http://localhost:3000", "http://localhost:3001","morphly-app-production-e3bf.up.railway.app",  "https://morphly-app-production-front.up.railway.app"] }));
+app.use(cors({ origin: ["http://localhost:3000", "http://localhost:3001","front-end-production-1019.up.railway.app",  "https://morphly-app-production-front.up.railway.app"] }));
 app.use(express.json());
 
 // in-memory job store
