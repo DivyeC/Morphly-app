@@ -79,34 +79,50 @@ useEffect(() => {
     }, 4000);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setVideoUrl("");
-    setStatus("running");
-    setJobId(null);
-    setStepIndex(0);
-    setProgress(0);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setVideoUrl("");
+  setStatus("running");
+  setJobId(null);
+  setStepIndex(0);
+  setProgress(0);
 
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
 
-      if (!res.ok) throw new Error("Failed to start generation");
-
-      const data = await res.json();
-      if (!data.jobId) throw new Error("No jobId returned from server");
-
-      setJobId(data.jobId);
-      startPolling(data.jobId);
-    } catch (err) {
-      setStatus("error");
-      setError(err.message || "Unknown error");
+    // --- NEW DEBUGGING LOGIC ---
+    if (!res.ok) {
+      // Get the response as text to see the HTML error page
+      const errorHtml = await res.text();
+      console.error("Server Error Page:", errorHtml);
+      
+      if (res.status === 404) {
+        throw new Error(`Endpoint not found (404). Check if your backend has @app.post("/api/generate")`);
+      } else if (res.status === 500) {
+        throw new Error("Internal Server Error (500). Check your Railway Backend logs!");
+      } else {
+        throw new Error(`Server Error: ${res.status}`);
+      }
     }
-  };
+    // ---------------------------
+
+    const data = await res.json();
+    if (!data.jobId) throw new Error("No jobId returned from server");
+
+    setJobId(data.jobId);
+    startPolling(data.jobId);
+  } catch (err) {
+    setStatus("error");
+    // This will now show the specific error message in your UI
+    setError(err.message || "Unknown error");
+    console.error("Submit Error:", err);
+  }
+};
 
   const handleExamplePrompt = () => {
     setPrompt(EXAMPLE_PROMPT);
